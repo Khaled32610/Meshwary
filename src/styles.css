@@ -553,6 +553,15 @@ a {
   width: min(100%, 1240px);
 }
 
+.fuel-price-status {
+  width: min(100%, 1240px);
+  margin: -22px 0 24px;
+  color: var(--color-white);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 .fuel-price-card {
   position: relative;
   display: grid;

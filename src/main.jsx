@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
+const FUEL_PRICES_ENDPOINT =
+  "https://meshwary-backend.vercel.app/api/v1/fuel-prices";
+
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const baseUrl = import.meta.env.BASE_URL;
@@ -221,25 +224,71 @@ function WhyMeshwary() {
 
 function FuelPrices() {
   const baseUrl = import.meta.env.BASE_URL;
-  const prices = [
+  const [fuelPrices, setFuelPrices] = useState(null);
+  const [fuelPricesStatus, setFuelPricesStatus] = useState("loading");
+
+  const fuels = [
     {
       name: "Gasoline 92",
-      price: "22.25",
+      field: "benzine92",
       note: "Most common fuel for everyday vehicles",
     },
     {
-      name: "Gasoline 95",
-      price: "24.00",
+      name: "Gasoline 90",
+      field: "benzine90",
     },
     {
       name: "Gasoline 80",
-      price: "20.75",
+      field: "benzine80",
     },
     {
       name: "Diesel Engine",
-      price: "20.50",
+      field: "solar",
     },
   ];
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadFuelPrices() {
+      try {
+        setFuelPricesStatus("loading");
+
+        const response = await fetch(FUEL_PRICES_ENDPOINT, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load fuel prices");
+        }
+
+        const payload = await response.json();
+        setFuelPrices(payload.data);
+        setFuelPricesStatus("ready");
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+
+        setFuelPricesStatus("error");
+      }
+    }
+
+    loadFuelPrices();
+
+    return () => controller.abort();
+  }, []);
+
+  const formatFuelPrice = (price) => {
+    if (typeof price !== "number") {
+      return "—";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: price % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+  };
 
   return (
     <section
@@ -256,8 +305,18 @@ function FuelPrices() {
           caught off guard at the pump.
         </p>
 
-        <div className="fuel-price-grid" aria-label="Latest fuel prices">
-          {prices.map((fuel) => (
+        {fuelPricesStatus === "error" ? (
+          <p className="fuel-price-status" role="status">
+            Fuel prices are temporarily unavailable.
+          </p>
+        ) : null}
+
+        <div
+          className="fuel-price-grid"
+          aria-busy={fuelPricesStatus === "loading"}
+          aria-label="Latest fuel prices"
+        >
+          {fuels.map((fuel) => (
             <article className="fuel-price-card" key={fuel.name}>
               <img
                 className="fuel-card-logo"
@@ -272,7 +331,7 @@ function FuelPrices() {
                 </span>
               </h3>
               <div className="fuel-price-value">
-                <span>{fuel.price}</span>
+                <span>{formatFuelPrice(fuelPrices?.[fuel.field])}</span>
                 <small>EGP/L</small>
               </div>
               {fuel.note ? <p className="fuel-price-note">ⓘ {fuel.note}</p> : null}
