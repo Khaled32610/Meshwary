@@ -1404,8 +1404,19 @@ function AssistantPage() {
 }
 
 function App() {
-  const baseUrl = import.meta.env.BASE_URL;
-  const route = window.location.hash.replace(/^#\/?/, "").replace(/\/+$/, "");
+  const getRoute = () =>
+    window.location.hash.replace(/^#\/?/, "").replace(/\/+$/, "");
+  const [route, setRoute] = useState(getRoute());
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(getRoute());
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   if (route === "assistant") {
     return <AssistantPage />;
