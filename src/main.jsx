@@ -498,6 +498,8 @@ function FinalCta({ page = "home" }) {
   );
 }
 
+// ─── Trip Cost Page ───────────────────────────────────────────────────────────
+
 const defaultTripForm = {
   brand: "Toyota",
   model: "Corolla",
@@ -506,8 +508,9 @@ const defaultTripForm = {
   to_location: "Alexandria",
   fuelType: "92",
   roadType: "city",
-  temperature: "38",
+  temperature: "28",
   airConditioning: true,
+  distance: "",
 };
 
 const tripFuelOptions = [
@@ -717,6 +720,40 @@ function TripCostPage({ onNavigate }) {
     return typeof price === "number" ? price : null;
   }
 
+  // Build locations array: start + any filled stops as waypoints + destination
+  function buildLocations() {
+    const locations = [
+      { name: form.from_location.trim(), type: "start" },
+    ];
+
+    stops.forEach((stop) => {
+      const name = stop.trim();
+      if (name) {
+        locations.push({ name, type: "waypoint" });
+      }
+    });
+
+    locations.push({ name: form.to_location.trim(), type: "destination" });
+
+    return locations;
+  }
+
+  // Build steps array from stops (instruction + distance placeholder)
+  function buildSteps() {
+    const allPoints = [
+      form.from_location.trim(),
+      ...stops.map((s) => s.trim()).filter(Boolean),
+      form.to_location.trim(),
+    ];
+
+    if (allPoints.length < 2) return [];
+
+    return allPoints.slice(0, -1).map((point, i) => ({
+      instruction: `Head from ${point} to ${allPoints[i + 1]}`,
+      distance: form.distance ? `${Math.round(Number(form.distance) / (allPoints.length - 1))} km` : "0 km",
+    }));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setStatus("loading");
@@ -724,16 +761,21 @@ function TripCostPage({ onNavigate }) {
     setResult(null);
 
     try {
+      const distanceValue = form.distance ? Number(form.distance) : undefined;
+
       const payload = {
+        locations: buildLocations(),
         brand: form.brand.trim(),
         model: form.model.trim(),
         year: Number(form.year),
-        from_location: form.from_location.trim(),
-        to_location: form.to_location.trim(),
         fuelType: form.fuelType,
         roadType: form.roadType,
         temperature: Number(form.temperature),
         airConditioning: form.airConditioning,
+        from_location: form.from_location.trim(),
+        to_location: form.to_location.trim(),
+        steps: buildSteps(),
+        ...(distanceValue ? { distance: distanceValue } : {}),
       };
 
       const response = await fetch(TRIP_COST_ENDPOINT, {
@@ -842,7 +884,20 @@ function TripCostPage({ onNavigate }) {
                 </label>
 
                 <label className="trip-field-card">
-                  <span>Temperature</span>
+                  <span>Distance (km)</span>
+                  <input
+                    type="number"
+                    value={form.distance}
+                    onChange={(event) => updateField("distance", event.target.value)}
+                    placeholder="e.g. 225"
+                    min="1"
+                    step="1"
+                    required
+                  />
+                </label>
+
+                <label className="trip-field-card">
+                  <span>Temperature (°C)</span>
                   <input
                     type="number"
                     value={form.temperature}
@@ -958,8 +1013,7 @@ function TripCostPage({ onNavigate }) {
               </button>
 
               <p className="trip-form-footnote">
-                The API currently uses your start and destination locations for the cost
-                calculation. Extra stops are kept in the interface for planning.
+                Distance is optional but improves estimate accuracy. Stops are included as waypoints in the route.
               </p>
             </form>
 
