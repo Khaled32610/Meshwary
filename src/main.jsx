@@ -15,7 +15,9 @@ const CHAT_ENDPOINT =
 function Header({ page = "home" }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const baseUrl = import.meta.env.BASE_URL;
-  const tripCostPath = `${baseUrl}trip-cost`;
+  const homePath = baseUrl;
+  const tripCostPath = `${baseUrl}#/trip-cost`;
+  const assistantPath = `${baseUrl}#/assistant`;
 
   return (
     <header className="site-header">
@@ -47,13 +49,13 @@ function Header({ page = "home" }) {
       >
         {page === "trip-cost" ? (
           <>
-            <a className="nav-link" href={baseUrl}>
+            <a className="nav-link" href={homePath}>
               Home
             </a>
-            <a className="nav-link" href={`${baseUrl}#fuel-prices`}>
+            <a className="nav-link" href="#fuel-prices">
               Fuel Prices
             </a>
-            <a className="get-link button button-primary" href={baseUrl}>
+            <a className="get-link button button-primary" href={homePath}>
               Back Home
             </a>
           </>
@@ -65,7 +67,7 @@ function Header({ page = "home" }) {
             <a className="nav-link" href={tripCostPath}>
               Trip Cost
             </a>
-            <a className="nav-link" href={`${baseUrl}assistant`}>
+            <a className="nav-link" href={assistantPath}>
               AI Assistant
             </a>
             <a className="get-link button button-primary" href="#get-meshwary">
@@ -1085,7 +1087,7 @@ function AssistantHeader() {
         </span>
       </div>
 
-      <a className="assistant-topbar-link" href={`${baseUrl}trip-cost`}>
+      <a className="assistant-topbar-link" href={`${baseUrl}#/trip-cost`}>
         Trip Cost
       </a>
     </header>
@@ -1403,16 +1405,13 @@ function AssistantPage() {
 
 function App() {
   const baseUrl = import.meta.env.BASE_URL;
-  const tripCostPath = `${baseUrl}trip-cost`;
-  const assistantPath = `${baseUrl}assistant`;
-  const normalizePath = (value) => value.replace(/\/+$/, "");
-  const currentPath = normalizePath(window.location.pathname);
+  const route = window.location.hash.replace(/^#\/?/, "").replace(/\/+$/, "");
 
-  if (currentPath === normalizePath(assistantPath)) {
+  if (route === "assistant") {
     return <AssistantPage />;
   }
 
-  if (currentPath === normalizePath(tripCostPath)) {
+  if (route === "trip-cost") {
     return <TripCostPage />;
   }
 
