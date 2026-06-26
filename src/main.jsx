@@ -9,8 +9,9 @@ const FUEL_PRICES_ENDPOINT =
 const TRIP_COST_ENDPOINT =
   "https://meshwary-backend.vercel.app/api/v1/trip-cost/";
 
-const CHAT_ENDPOINT =
-  "/chat";
+const CHAT_ENDPOINT = import.meta.env.DEV
+  ? "/chat"
+  : "https://meshwary-chatbot-production.up.railway.app/chat";
 
 function Header({ page = "home", onNavigate }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
