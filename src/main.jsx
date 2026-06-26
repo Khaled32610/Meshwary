@@ -12,16 +12,31 @@ const TRIP_COST_ENDPOINT =
 const CHAT_ENDPOINT =
   "/chat";
 
-function Header({ page = "home" }) {
+function Header({ page = "home", onNavigate }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const baseUrl = import.meta.env.BASE_URL;
   const homePath = baseUrl;
   const tripCostPath = `${baseUrl}#/trip-cost`;
   const assistantPath = `${baseUrl}#/assistant`;
 
+  function handleNavigate(event, route) {
+    if (!onNavigate) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(route);
+    setIsMenuOpen(false);
+  }
+
   return (
     <header className="site-header">
-      <a className="brand" href={baseUrl} aria-label="Meshwary home">
+      <a
+        className="brand"
+        href={baseUrl}
+        aria-label="Meshwary home"
+        onClick={(event) => handleNavigate(event, "")}
+      >
         <img
           className="brand-logo"
           src={`${baseUrl}assets/meshwary-logo.png`}
@@ -49,13 +64,21 @@ function Header({ page = "home" }) {
       >
         {page === "trip-cost" ? (
           <>
-            <a className="nav-link" href={homePath}>
+            <a
+              className="nav-link"
+              href={homePath}
+              onClick={(event) => handleNavigate(event, "")}
+            >
               Home
             </a>
             <a className="nav-link" href="#fuel-prices">
               Fuel Prices
             </a>
-            <a className="get-link button button-primary" href={homePath}>
+            <a
+              className="get-link button button-primary"
+              href={homePath}
+              onClick={(event) => handleNavigate(event, "")}
+            >
               Back Home
             </a>
           </>
@@ -64,10 +87,18 @@ function Header({ page = "home" }) {
             <a className="nav-link" href="#about">
               About Meshwary
             </a>
-            <a className="nav-link" href={tripCostPath}>
+            <a
+              className="nav-link"
+              href={tripCostPath}
+              onClick={(event) => handleNavigate(event, "trip-cost")}
+            >
               Trip Cost
             </a>
-            <a className="nav-link" href={assistantPath}>
+            <a
+              className="nav-link"
+              href={assistantPath}
+              onClick={(event) => handleNavigate(event, "assistant")}
+            >
               AI Assistant
             </a>
             <a className="get-link button button-primary" href="#get-meshwary">
@@ -610,7 +641,7 @@ function TripFuelChip({ option, value, selected, onSelect }) {
   );
 }
 
-function TripCostPage() {
+function TripCostPage({ onNavigate }) {
   const baseUrl = import.meta.env.BASE_URL;
   const [form, setForm] = useState(defaultTripForm);
   const [stops, setStops] = useState([""]);
@@ -738,7 +769,7 @@ function TripCostPage() {
 
   return (
     <>
-      <Header page="trip-cost" />
+      <Header page="trip-cost" onNavigate={onNavigate} />
       <main className="trip-page">
         <TripCostHero />
         <section className="trip-estimator" id="trip-cost">
@@ -1009,10 +1040,10 @@ function TripCostPage() {
   );
 }
 
-function HomePage() {
+function HomePage({ onNavigate }) {
   return (
     <>
-      <Header page="home" />
+      <Header page="home" onNavigate={onNavigate} />
       <main className="page-shell">
         <Hero />
         <Services />
@@ -1062,7 +1093,7 @@ function splitWords(chunk) {
   return chunk.match(/\S+/g) ?? [];
 }
 
-function AssistantHeader() {
+function AssistantHeader({ onNavigate }) {
   const baseUrl = import.meta.env.BASE_URL;
 
   return (
@@ -1087,7 +1118,18 @@ function AssistantHeader() {
         </span>
       </div>
 
-      <a className="assistant-topbar-link" href={`${baseUrl}#/trip-cost`}>
+      <a
+        className="assistant-topbar-link"
+        href={`${baseUrl}#/trip-cost`}
+        onClick={(event) => {
+          if (!onNavigate) {
+            return;
+          }
+
+          event.preventDefault();
+          onNavigate("trip-cost");
+        }}
+      >
         Trip Cost
       </a>
     </header>
@@ -1164,7 +1206,7 @@ function AssistantComposer({ value, onChange, onSubmit, onPickPrompt, disabled }
   );
 }
 
-function AssistantPage() {
+function AssistantPage({ onNavigate }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -1342,7 +1384,7 @@ function AssistantPage() {
         <AssistantSidebar onStartNewChat={resetConversation} />
 
         <div className="assistant-main">
-          <AssistantHeader />
+          <AssistantHeader onNavigate={onNavigate} />
 
           <div className="assistant-chat">
             {messages.length === 0 ? (
@@ -1418,15 +1460,23 @@ function App() {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  function navigate(nextRoute) {
+    const nextHash = nextRoute ? `#/${nextRoute}` : "#";
+
+    setRoute(nextRoute);
+    window.history.pushState(null, "", nextHash);
+    window.scrollTo(0, 0);
+  }
+
   if (route === "assistant") {
-    return <AssistantPage />;
+    return <AssistantPage onNavigate={navigate} />;
   }
 
   if (route === "trip-cost") {
-    return <TripCostPage />;
+    return <TripCostPage onNavigate={navigate} />;
   }
 
-  return <HomePage />;
+  return <HomePage onNavigate={navigate} />;
 }
 
 createRoot(document.getElementById("root")).render(<App />);
